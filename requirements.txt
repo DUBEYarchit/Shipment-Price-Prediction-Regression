@@ -17,6 +17,6 @@ python-multipart
 PyYAML
 scikit-learn
 seaborn
-sklearn
 uvicorn
 xgboost
+-e .
