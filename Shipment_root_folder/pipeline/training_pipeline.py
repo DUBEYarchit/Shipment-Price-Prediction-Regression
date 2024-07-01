@@ -5,17 +5,20 @@ from Shipment_root_folder.configuration.mongo_operation import MongoDBOperation
 from Shipment_root_folder.Entity.artifacts_entity import (
     DataIngestionArtifacts,
     DataValidationArtifacts,
+    DataTransformationArtifacts,
 
     )
 
 from Shipment_root_folder.Entity.config_entity import (
     DataIngestionConfig,
     DataValidationConfig,
+    DataTransformationConfig,
     
     )
 
 from Shipment_root_folder.components.data_ingestion import DataIngestion
 from Shipment_root_folder.components.data_validation import DataValidation
+from Shipment_root_folder.components.data_transformation import DataTransformation
 
 from Shipment_root_folder.configuration.s3_configuration import S3Operation
 
@@ -24,7 +27,7 @@ class TrainPipeline:
     def __init__(self):
         self.data_ingestion_config = DataIngestionConfig()
         self.data_validation_config = DataValidationConfig()
-       
+        self.data_transformation_config = DataTransformationConfig()
         self.s3_operations = S3Operation()
         self.mongo_op = MongoDBOperation()
 
@@ -65,7 +68,28 @@ class TrainPipeline:
         except Exception as e:
             raise Shipment_Exception(e, sys) from e
 
-    
+    def start_data_transformation(
+        self, data_ingestion_artifact: DataIngestionArtifacts
+    ) -> DataTransformationArtifacts:
+        logging.info(
+            "Entered the start_data_transformation method of TrainPipeline class"
+        )
+        try:
+            data_transformation = DataTransformation(
+                data_ingestion_artifacts=data_ingestion_artifact,
+                data_transformation_config=self.data_transformation_config,
+            )
+            data_transformation_artifact = (
+                data_transformation.initiate_data_transformation()
+            )
+            logging.info(
+                "Exited the start_data_transformation method of TrainPipeline class"
+            )
+            return data_transformation_artifact
+
+        except Exception as e:
+            raise Shipment_Exception(e, sys) from e
+
     # This method is used to start the training pipeline
     def run_pipeline(self) -> None:
         logging.info("Entered the run_pipeline method of TrainPipeline class")
@@ -73,8 +97,10 @@ class TrainPipeline:
             data_ingestion_artifact = self.start_data_ingestion()
             data_validation_artifact = self.start_data_validation(
                   data_ingestion_artifact=data_ingestion_artifact
-              )
-            
+            )
+            data_transformation_artifact = self.start_data_transformation(
+                data_ingestion_artifact=data_ingestion_artifact
+            )
 
             logging.info("Exited the run_pipeline method of TrainPipeline class")
 
