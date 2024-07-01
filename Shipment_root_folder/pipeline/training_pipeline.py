@@ -6,6 +6,7 @@ from Shipment_root_folder.Entity.artifacts_entity import (
     DataIngestionArtifacts,
     DataValidationArtifacts,
     DataTransformationArtifacts,
+    ModelTrainerArtifacts,
 
     )
 
@@ -13,12 +14,15 @@ from Shipment_root_folder.Entity.config_entity import (
     DataIngestionConfig,
     DataValidationConfig,
     DataTransformationConfig,
+    ModelTrainerConfig,
     
     )
 
 from Shipment_root_folder.components.data_ingestion import DataIngestion
 from Shipment_root_folder.components.data_validation import DataValidation
 from Shipment_root_folder.components.data_transformation import DataTransformation
+from Shipment_root_folder.components.model_trainer import ModelTrainer
+
 
 from Shipment_root_folder.configuration.s3_configuration import S3Operation
 
@@ -28,6 +32,7 @@ class TrainPipeline:
         self.data_ingestion_config = DataIngestionConfig()
         self.data_validation_config = DataValidationConfig()
         self.data_transformation_config = DataTransformationConfig()
+        self.model_trainer_config = ModelTrainerConfig()
         self.s3_operations = S3Operation()
         self.mongo_op = MongoDBOperation()
 
@@ -89,6 +94,20 @@ class TrainPipeline:
 
         except Exception as e:
             raise Shipment_Exception(e, sys) from e
+    
+    def start_model_trainer(
+        self, data_transformation_artifact: DataTransformationArtifacts
+    ) -> ModelTrainerArtifacts:
+        try:
+            model_trainer = ModelTrainer(
+                data_transformation_artifact=data_transformation_artifact,
+                model_trainer_config=self.model_trainer_config,
+            )
+            model_trainer_artifact = model_trainer.initiate_model_trainer()
+            return model_trainer_artifact
+
+        except Exception as e:
+            raise Shipment_Exception(e, sys) from e
 
     # This method is used to start the training pipeline
     def run_pipeline(self) -> None:
@@ -100,6 +119,9 @@ class TrainPipeline:
             )
             data_transformation_artifact = self.start_data_transformation(
                 data_ingestion_artifact=data_ingestion_artifact
+            )
+            model_trainer_artifact = self.start_model_trainer(
+                data_transformation_artifact=data_transformation_artifact
             )
 
             logging.info("Exited the run_pipeline method of TrainPipeline class")
