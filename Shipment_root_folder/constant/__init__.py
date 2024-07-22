@@ -39,3 +39,6 @@ MODEL_SAVE_FORMAT = ".pkl"
 
 BUCKET_NAME = "shipmentadp-model-io-files"
 S3_MODEL_NAME = "shipping_price_model.pkl"
+
+APP_HOST = "0.0.0.0"
+APP_PORT = 8080
